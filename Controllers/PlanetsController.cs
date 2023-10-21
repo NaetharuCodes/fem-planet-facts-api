@@ -1,7 +1,7 @@
 // Controllers/PlanetsController.cs
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SolarSystemAPI.Models;
-using SolarSystemAPI.Services;
 
 namespace SolarSystemAPI.Controllers
 {
@@ -9,21 +9,25 @@ namespace SolarSystemAPI.Controllers
     [Route("api/[controller]")]
     public class PlanetsController : ControllerBase
     {
-        private readonly PlanetService _planetService;
+        private readonly SolarSystemContext _context;
 
-        public PlanetsController()
+        public PlanetsController(SolarSystemContext context)
         {
-            _planetService = new PlanetService();
+            _context = context;
         }
 
-        [HttpGet]
-        public ActionResult<IEnumerable<Planet>> Get() => Ok(_planetService.GetAll());
-
-        [HttpGet("{id}")]
-        public ActionResult<Planet> Get(int id)
+        [HttpGet("{name}")]
+        public async Task<ActionResult<Planet>> GetPlanetByName(string name)
         {
-            var planet = _planetService.GetById(id);
-            if (planet == null) return NotFound();
+            var planet = await _context.Planets.FirstOrDefaultAsync(
+                p => p.Name.ToLower() == name.ToLower()
+            );
+
+            if (planet == null)
+            {
+                return NotFound($"Planet with name {name} not found.");
+            }
+
             return Ok(planet);
         }
     }
